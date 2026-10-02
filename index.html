@@ -1,112 +1,420 @@
-<!doctype html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TokenRun Mobile Checker</title>
 <style>
-body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px;color:#17202a}
+body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:20px;color:#17202a}
 .box{max-width:700px;margin:auto;background:white;border-radius:18px;padding:22px;box-shadow:0 4px 18px #0001}
-h1{margin-top:0}.sub{color:#667085}
+h1{margin-top:0}
 input{width:100%;box-sizing:border-box;padding:15px;border:1px solid #ccd3da;border-radius:12px;font-size:17px}
+button{margin-top:12px;padding:13px 20px;border:0;border-radius:10px;background:#1677ff;color:white;font-size:16px}
 .result{margin-top:18px;padding:18px;border-radius:14px;background:#f7f8fa}
-.status{font-size:25px;font-weight:800}.reason{margin-top:8px;line-height:1.5}
-small{color:#667085}.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.chip{padding:6px 9px;border-radius:20px;background:#eef1f4;font-size:12px}
+.good{color:#087f23}.mid{color:#9a6800}.bad{color:#c62828}
+.small{color:#667085;font-size:14px;line-height:1.5}
 </style>
 </head>
+
 <body>
 <div class="box">
 <h1>📍 TokenRun Mobile Checker</h1>
-<p class="sub">Mobile model লিখে search করো — তোমার tested data অনুযায়ী verdict দেখাবে।</p>
-<input id="q" placeholder="যেমন: Realme P1 5G" autocomplete="off">
-<div id="r" class="result"><div class="status">📱 Search a phone</div><div class="reason">Phone name লিখলেই result দেখাবে।</div></div>
-<p><small>🟢 = confirmed/likely success &nbsp; 🟡 = uncertain &nbsp; 🔴 = confirmed/likely fail</small></p>
-<div class="chips"><span class="chip">Actual TokenRun test = final confirmation</span><span class="chip">Data based on current tested list</span></div>
+
+<p>Phone model লিখে Search করো। Confirmed TokenRun result এবং hardware/GNSS analysis মিলিয়ে সম্ভাব্য verdict দেখাবে।</p>
+
+<input id="q" placeholder="যেমন: Samsung S23">
+
+<button onclick="check()">Analyze Phone</button>
+
+<div id="result"></div>
 </div>
+
 <script>
-const D={
-"realme p1 5g":["🟢","CONFIRMED SUCCESS","Dimensity 7050 — তোমার tested success device."],
-"poco m2 pro":["🟢","CONFIRMED SUCCESS","তোমার tested success device."],
-"motorola edge 50 neo":["🟢","CONFIRMED SUCCESS","Dimensity 7300 — তোমার tested success device."],
-"cmf phone 1":["🟢","CONFIRMED SUCCESS","তোমার tested success device."],
-"vivo t3 pro":["🟢","CONFIRMED SUCCESS","তোমার tested success device."],
-"vivo y400 pro":["🟢","CONFIRMED SUCCESS","তোমার tested success device."],
-"poco c65":["🟢","CONFIRMED SUCCESS","তোমার tested success device."],
-"vivo y35":["🟢","CONFIRMED SUCCESS","তোমার tested success device."],
-"poco m4 pro":["🔴","CONFIRMED FAILURE","তোমার tested failure device."],
-"poco m4 pro 5g":["🔴","CONFIRMED FAILURE","তোমার tested failure device."],
-"realme 15t":["🔴","CONFIRMED FAILURE","তোমার tested failure device."],
-"infinix hot 11":["🔴","CONFIRMED FAILURE","তোমার tested failure device."],
-"vivo t4x 5g":["🟢","LIKELY","Dimensity 7300; successful Edge 50 Neo-এর সঙ্গে chipset match."],
-"motorola edge 50":["🟢","LIKELY","Dimensity 7300; successful Edge 50 Neo-এর সঙ্গে chipset match."],
-"realme 12+ 5g":["🟢","LIKELY","Dimensity 7050; successful Realme P1 5G-এর chipset match."],
-"realme p3 ultra":["🟢","LIKELY","Dimensity 8350 Ultra; strong GNSS candidate."],
-"vivo t3":["🟢","LIKELY","Dimensity 7200; strong GNSS candidate."],
-"iqoo z7 pro":["🟢","LIKELY","Dimensity 7200; strong GNSS candidate."],
-"vivo t3x 5g":["🟢","LIKELY","Snapdragon 6 Gen 1; good GNSS candidate."],
-"vivo t3x":["🟢","LIKELY","Snapdragon 6 Gen 1; good GNSS candidate."],
-"vivo t4 pro":["🟢","LIKELY","Snapdragon 7 Gen 4; good GNSS candidate."],
-"vivo t4 ultra":["🟢","LIKELY","Dimensity 9300+; strong GNSS candidate."],
-"samsung galaxy f55":["🟢","LIKELY","Snapdragon 7 Gen 1; good GNSS candidate."],
-"moto g34 5g":["🟢","LIKELY","Snapdragon 695; good GNSS candidate."],
-"moto g34":["🟢","LIKELY","Snapdragon 695; good GNSS candidate."],
-"vivo v29":["🟢","LIKELY","Snapdragon 778G; good GNSS candidate."],
-"vivo v29e":["🟢","LIKELY","Snapdragon 695; good candidate."],
-"vivo v50":["🟢","LIKELY","Snapdragon 7 Gen 3; good GNSS candidate."],
-"iqoo 7 5g":["🟢","LIKELY","Snapdragon 870; strong GNSS candidate."],
-"iqoo 12":["🟢","LIKELY","Snapdragon 8 Gen 3; strong GNSS candidate."],
-"iqoo 13":["🟢","LIKELY","Snapdragon 8 Elite; strong GNSS candidate."],
-"iqoo neo 10":["🟢","LIKELY","Snapdragon 8s Gen 4; strong GNSS candidate."],
-"redmi 12 5g":["🟢","LIKELY","Snapdragon 4 Gen 2; good candidate."],
-"vivo y400 5g":["🟢","LIKELY","Snapdragon 4 Gen 2; good candidate."],
-"oneplus nord ce 2 5g":["🟢","LIKELY","Dimensity 900; good GNSS candidate."],
-"cmf phone 2 pro":["🟢","LIKELY","Dimensity 7300 Pro; strong candidate based on successful Dimensity 7300 family."],
-"oppo k13":["🟢","LIKELY","Snapdragon 6 Gen 4; good GNSS candidate."],
-"oneplus nord":["🟡","MODEL NEEDED","Nord series has multiple models; exact model needed."],
-"redmi note 13":["🟡","UNCERTAIN","4G/5G versions differ; exact model needed."],
-"redmi note 10s":["🟡","UNCERTAIN","Helio G95; no confirmed TokenRun test."],
-"oppo k13 turbo":["🟡","UNCERTAIN","Dimensity 8450; phone-level positioning evidence is not conclusive."],
-"redmi note 15":["🟡","UNCERTAIN","No confirmed TokenRun test."],
-"vivo y200":["🟡","UNCERTAIN","Snapdragon 4 Gen 1; no confirmed test."],
-"moto g40 fusion":["🟡","UNCERTAIN","Snapdragon 732G; no confirmed test."],
-"poco m7 pro":["🟡","UNCERTAIN","Dimensity 7025-Ultra; no confirmed test."],
-"poco m6 pro":["🟡","UNCERTAIN","4G model uses Helio G99-Ultra; no confirmed test."],
-"poco c85":["🟡","UNCERTAIN","Helio G81-Ultra; dual-frequency positioning not listed."],
-"poco c75":["🟡","UNCERTAIN","Helio G81-Ultra; no confirmed TokenRun test."],
-"vivo y28 5g":["🟡","UNCERTAIN","Dimensity 6020; no confirmed test."],
-"vivo y56 5g":["🟡","UNCERTAIN","Dimensity 700; no confirmed test."],
-"samsung galaxy f17":["🟡","UNCERTAIN","Exynos 1330; no confirmed test."],
-"samsung galaxy f15":["🟡","UNCERTAIN","Dimensity 6100+; no confirmed test."],
-"redmi pad pro 5g":["🟡","UNCERTAIN","Tablet; no confirmed TokenRun test."],
-"redmi note 9 pro":["🟡","UNCERTAIN","Snapdragon 720G; no confirmed test."],
-"vivo v20e":["🟡","UNCERTAIN","Snapdragon 720G; no confirmed test."],
-"mi a3":["🟡","UNCERTAIN","Snapdragon 665; no confirmed test."],
-"vivo s1 pro":["🔴","LIKELY FAIL","Snapdragon 665; fail-side based on similar platform."],
-"redmi note 7 pro":["🔴","LIKELY FAIL","Snapdragon 675; older platform."],
-"redmi 8":["🔴","LIKELY FAIL","Snapdragon 439; older/basic GNSS."],
-"vivo y91":["🔴","LIKELY FAIL","Snapdragon 439; older/basic GNSS."],
-"vivo y20":["🔴","LIKELY FAIL","Snapdragon 460; basic GNSS."],
-"vivo y12s":["🔴","LIKELY FAIL","Helio P35; basic GNSS."],
-"poco c51":["🔴","LIKELY FAIL","Helio G36; basic GNSS."],
-"realme c3":["🔴","LIKELY FAIL","Helio G70; same chipset as confirmed-fail Infinix Hot 11."],
-"realme c53":["🔴","LIKELY FAIL","Unisoc T612; basic GNSS."],
-"realme narzo 30":["🔴","LIKELY FAIL","Helio G95; no strong evidence."],
-"infinix hot 10i":["🔴","LIKELY FAIL","Older budget GNSS platform."],
-"tecno spark 30c":["🔴","LIKELY FAIL","Helio G81; no strong evidence."],
-"vivo t5 lite":["🔴","LIKELY FAIL","Dimensity 6300; no strong TokenRun evidence."],
-"samsung galaxy f06 5g":["🔴","LIKELY FAIL","Dimensity 6300; no confirmed success match."],
-"redmi 14c 4g":["🔴","LIKELY FAIL","Helio G81-Ultra; no dual-frequency positioning."],
-"redmi note 10s":["🟡","UNCERTAIN","Helio G95; no confirmed TokenRun test."]
+
+/* =========================
+   CONFIRMED REAL TEST RESULTS
+   এগুলোর priority সবচেয়ে বেশি
+========================= */
+
+const confirmed = {
+
+"vivo t3 pro":"success",
+"poco m2 pro":"success",
+"motorola edge 50 neo":"success",
+"cmf phone 1":"success",
+"vivo y400 pro":"success",
+"poco c65":"success",
+"vivo y35":"success",
+"realme p1 5g":"success",
+
+"poco m4 pro":"fail",
+"realme 15t":"fail",
+"infinix hot 11":"fail"
 };
-const q=document.getElementById("q"),r=document.getElementById("r");
-function show(){
- let s=q.value.trim().toLowerCase();
- if(!s){r.innerHTML='<div class="status">📱 Search a phone</div><div class="reason">Phone name লিখলেই result দেখাবে।</div>';return}
- let key=Object.keys(D).find(k=>k===s)||Object.keys(D).find(k=>k.includes(s)||s.includes(k));
- if(!key){r.innerHTML='<div class="status">🟡 Not in database</div><div class="reason">এই model-এর data এখনো নেই। Exact model name দিয়ে আবার check করো।</div>';return}
- let x=D[key];r.innerHTML='<div class="status">'+x[0]+' '+x[1]+'</div><div class="reason"><b>'+key+'</b><br>'+x[2]+'</div>';
+
+
+/* =========================
+   CHIPSET / HARDWARE RULES
+========================= */
+
+const chipRules = {
+
+"8 gen 4":"strong",
+"8 gen 3":"strong",
+"8 gen 2":"strong",
+"8 gen 1":"strong",
+"8s gen 3":"strong",
+"8s gen 4":"strong",
+"7 gen 4":"strong",
+"7 gen 3":"strong",
+"7 gen 2":"good",
+"7s gen 3":"strong",
+"7s gen 2":"good",
+"6 gen 4":"good",
+"6 gen 3":"good",
+"6 gen 2":"good",
+"6 gen 1":"good",
+"695":"good",
+"778g":"good",
+"780g":"good",
+"720g":"good",
+"680":"good",
+"662":"medium",
+"460":"medium",
+
+"dimensity 9400":"strong",
+"dimensity 9300":"strong",
+"dimensity 9200":"strong",
+"dimensity 9000":"strong",
+"dimensity 8500":"good",
+"dimensity 8400":"good",
+"dimensity 8300":"strong",
+"dimensity 8200":"good",
+"dimensity 8100":"good",
+"dimensity 8050":"good",
+"dimensity 7300":"strong",
+"dimensity 7200":"strong",
+"dimensity 7050":"good",
+"dimensity 700":"medium",
+"dimensity 6100":"good",
+"dimensity 6300":"weak",
+"dimensity 6020":"weak",
+
+"helio g99":"medium",
+"helio g96":"medium",
+"helio g95":"medium",
+"helio g88":"weak",
+"helio g85":"weak",
+"helio g80":"weak",
+"helio g70":"weak",
+"helio g37":"weak",
+
+"exynos 2400":"strong",
+"exynos 2200":"strong",
+"exynos 2100":"strong",
+"exynos 1380":"good",
+"exynos 1330":"medium",
+"exynos 1280":"medium"
+};
+
+
+/* =========================
+   PHONE DATABASE
+========================= */
+
+const phones = {
+
+/* Samsung */
+"samsung galaxy s23":["Snapdragon 8 Gen 2","strong"],
+"samsung s23":["Snapdragon 8 Gen 2","strong"],
+"s23":["Snapdragon 8 Gen 2","strong"],
+"samsung galaxy s24":["Exynos 2400","strong"],
+"samsung galaxy s25":["Snapdragon 8 Elite","strong"],
+"samsung galaxy s22":["Snapdragon 8 Gen 1","strong"],
+"samsung galaxy a55":["Exynos 1480","good"],
+"samsung galaxy a35":["Exynos 1380","good"],
+"samsung galaxy a26 5g":["Exynos 1380","good"],
+"samsung galaxy f55":["Snapdragon 7 Gen 1","good"],
+"samsung galaxy f15 5g":["Dimensity 6100+","good"],
+"samsung galaxy f06 5g":["Dimensity 6300","weak"],
+"samsung galaxy m06 5g":["Dimensity 6300","weak"],
+"samsung galaxy m31":["Exynos 9611","weak"],
+
+/* Xiaomi / POCO / Redmi */
+"redmi k20 pro":["Snapdragon 855","strong"],
+"redmi note 15":["Unknown chipset","medium"],
+"redmi note 14":["Dimensity 7025","good"],
+"redmi note 13 5g":["Dimensity 6080","good"],
+"redmi note 13":["Snapdragon 685","medium"],
+"redmi note 13 4g":["Snapdragon 685","medium"],
+"redmi note 12 5g":["Snapdragon 4 Gen 1","good"],
+"redmi note 12 pro":["Dimensity 1080","good"],
+"redmi note 11 pro plus 5g":["Dimensity 920","good"],
+"redmi note 10s":["Helio G95","medium"],
+"redmi note 9 pro":["Snapdragon 720G","medium"],
+"redmi note 7 pro":["Snapdragon 675","weak"],
+"redmi note 6 pro":["Snapdragon 636","weak"],
+"redmi 15 4g":["Snapdragon 685","medium"],
+"redmi 14c 4g":["Helio G81","weak"],
+"redmi 12 5g":["Snapdragon 4 Gen 2","good"],
+"redmi 9 power":["Snapdragon 662","medium"],
+"redmi 8":["Snapdragon 439","weak"],
+"redmi a5":["Unisoc T7250","weak"],
+
+"poco f1":["Snapdragon 845","medium"],
+"poco m2":["Snapdragon 720G","medium"],
+"poco m2 pro":["Snapdragon 720G","success"],
+"poco m4 pro":["Helio G96","fail"],
+"poco m4 pro 5g":["Dimensity 810","good"],
+"poco m6 5g":["Dimensity 6100+","good"],
+"poco m6 plus 5g":["Snapdragon 4 Gen 2","good"],
+"poco m6 pro 4g":["Helio G99","medium"],
+"poco m7 pro 5g":["Dimensity 7025 Ultra","good"],
+"poco c65":["Helio G85","success"],
+"poco c75":["Helio G81 Ultra","medium"],
+"poco c85":["Helio G81 Ultra","medium"],
+
+/* vivo */
+"vivo t3 pro":["Snapdragon 7 Gen 3","success"],
+"vivo t3":["Dimensity 7200","strong"],
+"vivo t3x 5g":["Snapdragon 6 Gen 1","good"],
+"vivo t4x 5g":["Dimensity 7300","strong"],
+"vivo t4 pro":["Snapdragon 7 Gen 4","strong"],
+"vivo t4 ultra":["Dimensity 9300+","strong"],
+"vivo t5 lite 5g":["Unknown chipset","weak"],
+"vivo y400 pro":["Snapdragon 7 Gen 3","success"],
+"vivo y400 5g":["Snapdragon 4 Gen 2","good"],
+"vivo y35":["Snapdragon 680","success"],
+"vivo y56 5g":["Dimensity 700","medium"],
+"vivo y20":["Snapdragon 460","weak"],
+"vivo y12s":["Helio P35","weak"],
+"vivo v29":["Snapdragon 778G","good"],
+"vivo v50":["Snapdragon 7 Gen 3","strong"],
+"vivo v20e":["Snapdragon 720G","medium"],
+"vivo s1 pro":["Snapdragon 665","weak"],
+
+/* Realme */
+"realme p1 5g":["Dimensity 7050","success"],
+"realme p3 pro":["Snapdragon 7s Gen 3","strong"],
+"realme p3 ultra":["Dimensity 8350 Ultra","strong"],
+"realme 15t":["Unknown","fail"],
+"realme 10 pro":["Snapdragon 695","good"],
+"realme narzo 30":["Helio G95","weak"],
+"realme narzo 20a":["Snapdragon 665","medium"],
+"realme c3":["Helio G70","weak"],
+
+/* Motorola */
+"motorola edge 50 neo":["Dimensity 7300","success"],
+"motorola edge 50":["Dimensity 7300","strong"],
+"motorola edge 60 fusion":["Dimensity 7400","strong"],
+"moto g67 power":["Snapdragon 7s Gen 2","good"],
+"moto g40 fusion":["Snapdragon 732G","medium"],
+"moto g34 5g":["Snapdragon 695","good"],
+"moto g57 power":["Snapdragon 6 Gen 4","good"],
+
+/* OnePlus */
+"oneplus nord ce 2 5g":["Dimensity 900","good"],
+"oneplus nord 2 5g":["Dimensity 1200","good"],
+"oneplus nord 3":["Dimensity 9000","strong"],
+"oneplus nord 4":["Snapdragon 7+ Gen 3","strong"],
+"oneplus 12":["Snapdragon 8 Gen 3","strong"],
+"oneplus 13":["Snapdragon 8 Elite","strong"],
+
+/* OPPO */
+"oppo k13":["Snapdragon 6 Gen 4","good"],
+"oppo k13 turbo":["Dimensity 8400","good"],
+"oppo k10 5g":["Dimensity 810","good"],
+
+/* iQOO */
+"iqoo 7 5g":["Snapdragon 870","strong"],
+"iqoo 12":["Snapdragon 8 Gen 3","strong"],
+"iqoo 13":["Snapdragon 8 Elite","strong"],
+"iqoo neo 10":["Snapdragon 8s Gen 4","strong"],
+
+/* Nothing / CMF */
+"cmf phone 1":["Dimensity 7300","success"],
+"cmf phone 2 pro":["Dimensity 7300 Pro","strong"],
+"nothing phone 2":["Snapdragon 8+ Gen 1","strong"],
+
+/* Infinix */
+"infinix hot 11":["Helio G70","fail"],
+"infinix hot 10i":["Helio G25","weak"],
+"infinix note 11s":["Helio G96","medium"],
+
+/* Older */
+"mi a3":["Snapdragon 665","medium"],
+"redmi 9":["Helio G80","weak"],
+"redmi 10":["Helio G88","weak"]
+};
+
+
+/* =========================
+   SEARCH / ANALYSIS
+========================= */
+
+function normalize(s){
+return s.toLowerCase()
+.replace(/samsung galaxy /g,"")
+.replace(/xiaomi /g,"")
+.replace(/mobile/g,"")
+.replace(/\s+/g," ")
+.trim();
 }
-q.addEventListener("input",show);
+
+function check(){
+
+let input=document.getElementById("q").value.trim();
+
+if(!input){
+document.getElementById("result").innerHTML=
+"<div class='result'>📱 আগে একটি phone model লিখুন।</div>";
+return;
+}
+
+let q=normalize(input);
+
+
+/* Confirmed result first */
+
+for(let key in confirmed){
+
+if(q===normalize(key) || q.includes(normalize(key)) || normalize(key).includes(q)){
+
+if(confirmed[key]==="success"){
+show("🟢","CONFIRMED SUCCESS",
+"এই model TokenRun-এ বাস্তবে কাজ করেছে।",
+"confirmed");
+}else{
+show("🔴","CONFIRMED FAILURE",
+"এই model TokenRun test-এ কাজ করেনি।",
+"fail");
+}
+return;
+}
+}
+
+
+/* Known phone */
+
+let found=null;
+
+for(let key in phones){
+
+if(q===normalize(key) || q.includes(normalize(key)) || normalize(key).includes(q)){
+found=phones[key];
+break;
+}
+}
+
+
+if(found){
+
+let chip=found[0];
+let level=found[1];
+
+if(level==="success"){
+show("🟢","CONFIRMED SUCCESS",
+chip+" — user-tested successful device.",
+"confirmed");
+return;
+}
+
+if(level==="fail"){
+show("🔴","CONFIRMED FAILURE",
+chip+" — user-tested failure device.",
+"fail");
+return;
+}
+
+if(level==="strong"){
+show("🟢","LIKELY TO WORK",
+chip+" — strong GNSS/hardware candidate. Actual TokenRun test is the final confirmation.",
+"likely");
+return;
+}
+
+if(level==="good"){
+show("🟢","LIKELY TO WORK",
+chip+" — good hardware/GNSS candidate. Actual TokenRun test is required for confirmation.",
+"likely");
+return;
+}
+
+if(level==="medium"){
+show("🟡","UNCERTAIN / POSSIBLE",
+chip+" — hardware may support the required positioning features, but evidence is not conclusive.",
+"uncertain");
+return;
+}
+
+if(level==="weak"){
+show("🔴","LIKELY TO FAIL",
+chip+" — weaker positioning/hardware profile. This is a prediction, not a confirmed TokenRun result.",
+"fail");
+return;
+}
+}
+
+
+/* Chipset name directly typed */
+
+for(let chip in chipRules){
+
+if(q.includes(chip)){
+
+let level=chipRules[chip];
+
+if(level==="strong"||level==="good"){
+show("🟢","LIKELY TO WORK",
+"Detected chipset: "+chip+". GNSS/hardware profile is favorable.",
+"likely");
+return;
+}
+
+if(level==="medium"){
+show("🟡","UNCERTAIN",
+"Detected chipset: "+chip+". More real-world TokenRun data is needed.",
+"uncertain");
+return;
+}
+
+if(level==="weak"){
+show("🔴","LIKELY TO FAIL",
+"Detected chipset: "+chip+". Positioning capability appears less favorable.",
+"fail");
+return;
+}
+}
+
+
+/* S23 special smart analysis */
+
+if(q.includes("s23")){
+show("🟢","SMART ANALYSIS — LIKELY TO WORK",
+"Galaxy S23 India model uses Snapdragon 8 Gen 2. Its GNSS hardware supports advanced multi-frequency positioning. This is a hardware-based prediction; an actual TokenRun test is the final confirmation.",
+"likely");
+return;
+}
+
+
+/* Unknown */
+
+show("🟡","NO VERIFIED MODEL DATA",
+"This phone is not yet in the local model database. The checker cannot honestly claim success/failure without reliable chipset/GNSS information.",
+"uncertain");
+}
+
+
+function show(icon,title,text,type){
+
+document.getElementById("result").innerHTML=
+"<div class='result'>"+
+"<h2 class='"+type+"'>"+icon+" "+title+"</h2>"+
+"<p>"+text+"</p>"+
+"<p class='small'>⚠️ Prediction is not a guarantee. TokenRun's real-world test is the final confirmation.</p>"+
+"</div>";
+}
+
 </script>
 </body>
 </html>
